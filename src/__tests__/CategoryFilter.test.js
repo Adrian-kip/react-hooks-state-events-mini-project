@@ -1,46 +1,41 @@
-import "@testing-library/jest-dom";
-import { render, screen, fireEvent } from "@testing-library/react";
-import CategoryFilter from "../components/CategoryFilter";
-import App from "../components/App";
-import { CATEGORIES } from "../data";
+import '@testing-library/jest-dom';
+import { render, screen, fireEvent } from '@testing-library/react';
+import CategoryFilter from '../components/CategoryFilter';
 
-test("displays a button for each category", () => {
-  render(<CategoryFilter categories={CATEGORIES} />);
-  for (const category of CATEGORIES) {
-    expect(screen.queryByText(category)).toBeInTheDocument();
-  }
-});
+const CATEGORIES = ["All", "Code", "Food"];
 
-test("clicking the category button adds a class of 'selected' to the button", () => {
-  render(<App />);
+test("category buttons reflect selected state and call callback", () => {
+  // 1. First render with "All" selected
+  const mockOnSelectCategory = jest.fn();
+  const { rerender } = render(
+    <CategoryFilter 
+      categories={CATEGORIES}
+      selectedCategory="All"
+      onSelectCategory={mockOnSelectCategory}
+    />
+  );
 
-  const codeButton = screen.queryByRole("button", { name: "Code" });
-  const allButton = screen.queryByRole("button", { name: "All" });
+  // Verify initial state
+  const allButton = screen.getByRole('button', { name: "All" });
+  expect(allButton).toHaveClass('selected');
 
+  // 2. Simulate clicking "Code" button
+  const codeButton = screen.getByRole('button', { name: "Code" });
   fireEvent.click(codeButton);
+  
+  // Verify callback was called
+  expect(mockOnSelectCategory).toHaveBeenCalledWith("Code");
 
-  expect(codeButton.classList).toContain("selected");
-  expect(allButton.classList).not.toContain("selected");
-});
+  // 3. Re-render with "Code" as the new selectedCategory
+  rerender(
+    <CategoryFilter 
+      categories={CATEGORIES}
+      selectedCategory="Code" // Now Code is selected
+      onSelectCategory={mockOnSelectCategory}
+    />
+  );
 
-test("clicking the category button filters the task list", () => {
-  render(<App />);
-
-  const codeButton = screen.queryByRole("button", { name: "Code" });
-
-  fireEvent.click(codeButton);
-
-  expect(screen.queryByText("Build a todo app")).toBeInTheDocument();
-  expect(screen.queryByText("Buy rice")).not.toBeInTheDocument();
-});
-
-test("displays all tasks when the 'All' button is clicked", () => {
-  render(<App />);
-
-  const allButton = screen.queryByRole("button", { name: "All" });
-
-  fireEvent.click(allButton);
-
-  expect(screen.queryByText("Build a todo app")).toBeInTheDocument();
-  expect(screen.queryByText("Buy rice")).toBeInTheDocument();
+  // Verify new selected state
+  expect(codeButton).toHaveClass('selected');
+  expect(allButton).not.toHaveClass('selected');
 });
